@@ -23,5 +23,6 @@ export function rateLimit(
 
   entry.count += 1;
   store.set(key, entry);
+
   return { success: true };
 }
