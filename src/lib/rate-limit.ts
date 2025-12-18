@@ -1,23 +1,27 @@
-const rateLimitMap = new Map<string, { count: number; time: number }>();
+type RateLimitResult = {
+  success: boolean;
+};
 
-export function rateLimit(ip: string, limit: 30, windowMs: 60_000) {
+const store = new Map<string, { count: number; expires: number }>();
+
+export function rateLimit(
+  key: string,
+  limit: number = 30,
+  windowMs: number = 60_000
+): RateLimitResult {
   const now = Date.now();
-  const record = rateLimitMap.get(ip);
-  if (!record) {
-    rateLimitMap.set(ip, { count: 1, time: now });
+  const entry = store.get(key);
+
+  if (!entry || entry.expires < now) {
+    store.set(key, { count: 1, expires: now + windowMs });
     return { success: true };
   }
 
-  if (now - record.time > windowMs) {
-    rateLimitMap.set(ip, { count: 1, time: now });
-    return { success: true };
-  }
-
-  if (record.count >= limit) {
+  if (entry.count >= limit) {
     return { success: false };
   }
 
-  record.count += 1;
-  rateLimitMap.set(ip, record);
+  entry.count += 1;
+  store.set(key, entry);
   return { success: true };
 }
