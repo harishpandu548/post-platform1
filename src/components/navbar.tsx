@@ -3,18 +3,24 @@
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import { motion } from "framer-motion";
+import { usePathname } from "next/navigation";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
+  const pathname = usePathname();
+
+  const isActive = (path: string) => pathname === path;
 
   return (
     <nav className="sticky top-0 z-50 bg-white border-b shadow-sm">
       <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+        {/* Logo */}
         <Link href="/" className="text-lg font-bold">
           Post<span className="text-gray-500">Platform</span>
         </Link>
 
-        <div className="flex items-center gap-4">
+        {/* Right side */}
+        <div className="flex items-center gap-6">
           {status === "loading" && (
             <p className="text-sm text-gray-500">Loading...</p>
           )}
@@ -23,14 +29,26 @@ export default function Navbar() {
             <>
               <Link
                 href="/login"
-                className="text-sm font-medium text-gray-600 hover:text-black"
+                className={`text-sm font-medium pb-1 border-b-2 transition
+                  ${
+                    isActive("/login")
+                      ? "border-black text-black"
+                      : "border-transparent text-gray-600 hover:text-black"
+                  }
+                `}
               >
                 Login
               </Link>
 
               <Link
                 href="/signup"
-                className="bg-black text-white px-4 py-1.5 rounded-md text-sm font-medium hover:opacity-90"
+                className={`text-sm font-medium pb-1 border-b-2 transition
+                  ${
+                    isActive("/signup")
+                      ? "border-black text-black"
+                      : "border-transparent text-gray-600 hover:text-black"
+                  }
+                `}
               >
                 Sign up
               </Link>

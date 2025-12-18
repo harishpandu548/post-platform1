@@ -30,7 +30,7 @@ export default function SignupPage() {
         callbackUrl: "/",
       });
     } else {
-      alert("Signup failed");
+      alert("User with this details already exists. Try another mail");
     }
   }
 
