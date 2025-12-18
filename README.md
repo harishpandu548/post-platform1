@@ -1,4 +1,4 @@
-# 🖼️ Post Platform – Full Stack Next.js Application
+#  Post Platform – Full Stack Next.js Application
 
 A production-style full stack web application built using **Next.js App Router** that supports authentication, image uploads, role-based access control, and a scalable feed system.
 
