@@ -32,6 +32,11 @@ export default function Feed() {
       body: JSON.stringify({ postId }),
     });
 
+    if (res.status === 429) {
+      setLoading(false);
+      return;
+    }
+
     if (res.ok) {
       setPosts((prev) => prev.filter((p) => p.id !== postId));
     } else {
@@ -128,10 +133,10 @@ export default function Feed() {
               >
                 <div className="relative w-full aspect-square">
                   <img
-                src={post.imageUrl}
-                alt="post"
-                className="w-full object-cover"
-              />
+                    src={post.imageUrl}
+                    alt="post"
+                    className="w-full object-cover"
+                  />
                 </div>
 
                 {canDelete && (

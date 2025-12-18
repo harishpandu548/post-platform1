@@ -1,10 +1,6 @@
 const rateLimitMap = new Map<string, { count: number; time: number }>();
 
-export function rateLimit(
-  ip: string,
-  limit = process.env.NODE_ENV === "development" ? 1000 : 100,
-  windowMs = 15 * 60 * 1000
-) {
+export function rateLimit(ip: string, limit: 30, windowMs: 60_000) {
   const now = Date.now();
   const record = rateLimitMap.get(ip);
   if (!record) {
