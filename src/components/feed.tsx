@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
-import Image from "next/image";
 import CreatePost from "./create-post";
 
 type Post = {
@@ -16,12 +15,12 @@ type Post = {
 
 export default function Feed() {
   const [posts, setPosts] = useState<Post[]>([]);
-  const initialLoadRef = useRef(false);
   const hasLoadedOnce = useRef(false);
 
   const { data: session, status } = useSession();
 
   const [cursor, setCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
 
   const loaderRef = useRef<HTMLDivElement | null>(null);
@@ -35,20 +34,13 @@ export default function Feed() {
       body: JSON.stringify({ postId }),
     });
 
-    if (res.status === 429) {
-      setLoading(false);
-      return;
-    }
-
     if (res.ok) {
       setPosts((prev) => prev.filter((p) => p.id !== postId));
-    } else {
-      alert("Delete failed");
     }
   }
 
   const loadPosts = useCallback(async () => {
-    if (loading) return;
+    if (loading || !hasMore) return;
 
     setLoading(true);
 
@@ -63,55 +55,47 @@ export default function Feed() {
 
     setPosts((prev) => {
       const map = new Map<string, Post>();
-
-      [...prev, ...data.posts].forEach((post) => {
-        map.set(post.id, post);
-      });
-
+      [...prev, ...data.posts].forEach((post) => map.set(post.id, post));
       return Array.from(map.values());
     });
 
     setCursor(data.nextCursor);
+    setHasMore(Boolean(data.nextCursor));
     setLoading(false);
-  }, [cursor, loading]);
+  }, [cursor, loading, hasMore]);
 
   const refreshPosts = useCallback(() => {
     setPosts([]);
     setCursor(null);
+    setHasMore(true);
     hasLoadedOnce.current = false;
   }, []);
 
- useEffect(() => {
-  if (status !== "authenticated") return;
-  if (hasLoadedOnce.current) return;
-
-  hasLoadedOnce.current = true;
-
-  (async () => {
-    await loadPosts();
-  })();
-}, [status, loadPosts]);
-
-  // initial load
   useEffect(() => {
-    if (!cursor || loading) return;
+    if (status !== "authenticated") return;
+    if (hasLoadedOnce.current) return;
+
+    hasLoadedOnce.current = true;
+    loadPosts();
+  }, [status, loadPosts]);
+
+  useEffect(() => {
+    if (!hasMore || loading) return;
     if (!loaderRef.current) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !loading) {
+        if (entries[0].isIntersecting) {
           loadPosts();
         }
       },
-      {
-        rootMargin: "200px",
-      }
+      { rootMargin: "200px" }
     );
 
     observer.observe(loaderRef.current);
 
     return () => observer.disconnect();
-  }, [cursor, loading, loadPosts]);
+  }, [hasMore, loading, loadPosts]);
 
   if (status === "loading") {
     return <p className="text-center mt-10">Checking session...</p>;
@@ -167,7 +151,7 @@ export default function Feed() {
         </motion.div>
       </AnimatePresence>
 
-      {cursor && (
+      {hasMore && (
         <div ref={loaderRef} className="h-12 flex justify-center items-center">
           {loading && (
             <motion.p
