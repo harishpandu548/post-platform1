@@ -127,7 +127,7 @@ export async function DELETE(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     const rateKey = await getRateKey(req);
-    const rate = rateLimit(rateKey);
+    const rate = rateLimit(rateKey,100,60_000);
 
     if (!rate.success) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });

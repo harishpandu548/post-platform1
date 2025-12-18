@@ -16,6 +16,9 @@ type Post = {
 
 export default function Feed() {
   const [posts, setPosts] = useState<Post[]>([]);
+  const initialLoadRef = useRef(false);
+  const hasLoadedOnce = useRef(false);
+
   const { data: session, status } = useSession();
 
   const [cursor, setCursor] = useState<string | null>(null);
@@ -67,6 +70,7 @@ export default function Feed() {
 
       return Array.from(map.values());
     });
+
     setCursor(data.nextCursor);
     setLoading(false);
   }, [cursor, loading]);
@@ -74,37 +78,47 @@ export default function Feed() {
   const refreshPosts = useCallback(() => {
     setPosts([]);
     setCursor(null);
+    hasLoadedOnce.current = false;
   }, []);
+
+ useEffect(() => {
+  if (status !== "authenticated") return;
+  if (hasLoadedOnce.current) return;
+
+  hasLoadedOnce.current = true;
+
+  (async () => {
+    await loadPosts();
+  })();
+}, [status, loadPosts]);
 
   // initial load
   useEffect(() => {
-    if (status === "authenticated") {
-      loadPosts();
-    }
-  }, [status, loadPosts]);
-
-  useEffect(() => {
-    if (!cursor || !loaderRef.current) return;
+    if (!cursor || loading) return;
+    if (!loaderRef.current) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
+        if (entries[0].isIntersecting && !loading) {
           loadPosts();
         }
       },
-      { threshold: 1 }
+      {
+        rootMargin: "200px",
+      }
     );
 
     observer.observe(loaderRef.current);
 
     return () => observer.disconnect();
-  }, [cursor, loadPosts]);
+  }, [cursor, loading, loadPosts]);
+
   if (status === "loading") {
     return <p className="text-center mt-10">Checking session...</p>;
   }
 
   if (status === "unauthenticated") {
-    return null; // middleware will redirect
+    return null;
   }
 
   return (
